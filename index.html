@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Love Match UniRV | Login</title> <!-- Título realista na aba -->
+    
+    <!-- Meta tags para parecer App Nativo -->
+    <meta name="theme-color" content="#ec4899"> <!-- Cor da barra do Chrome no Android -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta property="og:title" content="Love Match UniRV">
+    <meta property="og:description" content="Encontre seu par ideal na universidade.">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/2504/2504929.png"> <!-- Imagem que aparece no Whats -->
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Favicon (Ícone do site) -->
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2504/2504929.png" type="image/png">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f3f4f6;
+            overflow: hidden; 
+            touch-action: pan-y; /* Melhora a rolagem no celular */
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .card-stack { position: relative; width: 100%; height: 100%; }
+
+        .tinder-card {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 20px; background-size: cover; background-position: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            will-change: transform;
+        }
+
+        .swipe-left { transform: translateX(-150%) rotate(-30deg) !important; opacity: 0; }
+        .swipe-right { transform: translateX(150%) rotate(30deg) !important; opacity: 0; }
+        .card-gradient { background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 50%); }
+
+        .chat-bubble { max-width: 75%; padding: 10px 15px; border-radius: 18px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; position: relative; }
+        .chat-mine { background: #ec4899; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-theirs { background: #e5e7eb; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; }
+
+        .typing-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #6b7280; animation: typing 1.4s infinite ease-in-out both; margin: 0 1px; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        
+        .match-anim { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        /* Loading Screen Falso */
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen bg-gray-100 flex justify-center items-center">
+
+    <!-- TELA DE LOADING INICIAL (Para dar veracidade) -->
+    <div id="loading-screen">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
+        <h2 class="text-pink-500 font-bold text-xl">uni<span class="text-gray-800">rv</span> match</h2>
+        <p class="text-gray-400 text-sm mt-2">Carregando perfis próximos...</p>
+    </div>
+
+    <!-- APP CONTAINER -->
+    <div class="relative w-full h-full max-w-md bg-white sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+        
+        <!-- HEADER -->
+        <div class="h-16 bg-white border-b flex items-center justify-between px-4 z-20 shrink-0">
+            <div class="w-8"><i class="fas fa-user-circle text-gray-300 text-3xl"></i></div>
+            <div class="flex items-center gap-1">
+                <i class="fas fa-fire text-pink-500 text-xl"></i>
+                <h1 class="text-xl font-bold text-gray-800 tracking-tight">uni<span class="text-pink-500">rv</span> match</h1>
+            </div>
+            <div class="w-8 flex justify-end"><i class="fas fa-sliders-h text-gray-400 text-xl"></i></div>
+        </div>
+
+        <!-- VIEW: SWIPE -->
+        <div id="view-swipe" class="flex-1 relative p-4 overflow-hidden">
+            <div id="card-container" class="card-stack w-full h-full relative"></div>
+            <div class="absolute bottom-6 left-0 w-full flex justify-center gap-6 z-20 px-4">
+                <button onclick="handleSwipe('left')" class="w-14 h-14 bg-white rounded-full shadow-lg text-red-500 text-2xl flex items-center justify-center border border-gray-100 hover:bg-gray-50 transition transform active:scale-90"><i class="fas fa-times"></i></button>
+                <button onclick="handleSwipe('right')" class="w-14 h-14 bg-gradient-to-tr from-pink-500 to-red-500 rounded-full shadow-lg text-white text-2xl flex items-center justify-center hover:shadow-xl transition transform active:scale-90 active:rotate-12"><i class="fas fa-heart"></i></button>
+            </div>
+        </div>
+
+        <!-- VIEW: MATCHES -->
+        <div id="view-matches" class="hidden flex-1 flex-col bg-white overflow-hidden">
+            <div class="p-4 border-b">
+                <h2 class="text-pink-500 font-bold text-sm uppercase tracking-wide mb-3">Novos Matches</h2>
+                <div class="flex gap-4 overflow-x-auto no-scrollbar pb-2" id="new-matches-row"></div>
+            </div>
+            <div class="flex-1 overflow-y-auto no-scrollbar">
+                <h2 class="px-4 pt-4 text-gray-400 font-bold text-sm uppercase tracking-wide">Mensagens</h2>
+                <div id="messages-list" class="flex flex-col"></div>
+            </div>
+        </div>
+
+        <!-- VIEW: CHAT -->
+        <div id="view-chat" class="hidden flex-1 flex-col bg-white absolute top-0 left-0 w-full h-full z-50 transition-transform duration-300 transform translate-x-full">
+            <div class="h-16 border-b flex items-center px-4 bg-white shadow-sm shrink-0">
+                <button onclick="closeChat()" class="mr-4 text-gray-400 hover:text-pink-500"><i class="fas fa-chevron-left text-xl"></i></button>
+                <div class="relative w-10 h-10 rounded-full overflow-hidden mr-3"><img id="chat-header-img" src="" class="w-full h-full object-cover"></div>
+                <div class="flex-1">
+                    <h3 id="chat-header-name" class="font-bold text-gray-800 text-sm">Nome</h3>
+                    <p class="text-xs text-green-500 flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full"></span> Online agora</p>
+                </div>
+                <button class="text-gray-300"><i class="fas fa-ellipsis-v"></i></button>
+            </div>
+            <div id="chat-area" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2 bg-gray-50"></div>
+            <div class="h-16 bg-white border-t px-4 flex items-center gap-2 shrink-0">
+                <input id="msg-input" type="text" placeholder="Digite uma mensagem..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300">
+                <button onclick="sendMessage()" class="w-10 h-10 bg-pink-500 rounded-full text-white flex items-center justify-center hover:bg-pink-600 transition"><i class="fas fa-paper-plane text-sm"></i></button>
+            </div>
+        </div>
+
+        <!-- OVERLAY: MATCH -->
+        <div id="match-overlay" class="hidden absolute top-0 left-0 w-full h-full bg-black/90 z-50 flex-col items-center justify-center text-center p-8 backdrop-blur-sm">
+            <h1 class="text-4xl font-black text-white italic mb-8 match-anim" style="font-family: 'Segoe UI', sans-serif;">It's a Match!</h1>
+            <p class="text-white mb-8 text-sm">Você e <span id="match-name-overlay">alguém</span> se curtiram.</p>
+            <div class="flex justify-center gap-4 mb-12 w-full px-4">
+                <div class="w-24 h-24 rounded-full border-4 border-white bg-gray-300 overflow-hidden" style="background-image: url('https://randomuser.me/api/portraits/men/32.jpg'); background-size: cover;"></div>
+                <div id="match-img-overlay" class="w-24 h-24 rounded-full border-4 border-white bg-gray-300 overflow-hidden bg-cover bg-center"></div>
+            </div>
+            <button onclick="openChatFromMatch()" class="w-full bg-pink-500 text-white font-bold py-3 rounded-full mb-4 shadow-lg hover:bg-pink-600 transition">Mandar mensagem</button>
+            <button onclick="closeMatchOverlay()" class="w-full bg-transparent border-2 border-white text-white font-bold py-3 rounded-full hover:bg-white/10 transition">Continuar jogando</button>
+        </div>
+
+        <!-- NAV -->
+        <div class="h-16 bg-white border-t flex justify-around items-center text-gray-300 shrink-0 z-10">
+            <button onclick="switchTab('swipe')" id="nav-swipe" class="text-pink-500 transform transition hover:scale-110"><i class="fas fa-fire text-2xl"></i></button>
+            <button class="hover:text-pink-400 transition"><i class="fas fa-search text-2xl"></i></button>
+            <button onclick="switchTab('matches')" id="nav-matches" class="relative hover:text-pink-400 transition"><i class="fas fa-comment-alt text-2xl"></i><span id="badge-msg" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></span></button>
+            <button class="hover:text-pink-400 transition"><i class="fas fa-user text-2xl"></i></button>
+        </div>
+    </div>
+
+    <script>
+        // Remover Loading após 2 segundos
+        setTimeout(() => {
+            document.getElementById('loading-screen').style.display = 'none';
+        }, 2000);
+
+        // PERFIS CONFIGURADOS
+        const profiles = [
+            {
+                id: 1,
+                name: "Isabela",
+                age: 21,
+                course: "Medicina",
+                bio: "Futura Dra. 🩺 | Se não for pra causar na choppada eu nem vou. 🍻 | 📍 UniRV",
+                img: "https://randomuser.me/api/portraits/women/63.jpg",
+                script: ["Oii!", "Hahaha jura? 😂", "Eu faço med, tô no 5º período... sofrendo kkk", "Vamos marcar algo no barzinho da facul qualquer dia? 👀", "Aee! Fechou então! 🍻", "O Bar da Med vai estar lotado hoje, me encontra lá?", "Chego umas 22h. Não esquece de pagar uma bebida pra mim hein rsrs 😘"]
+            },
+            {
+                id: 2,
+                name: "Amanda",
+                age: 20,
+                course: "Odonto",
+                bio: "Odonto UniRV 🦷 | Sorria, você está sendo notado 😉 | Insta: @amandinha_xv",
+                img: "https://randomuser.me/api/portraits/women/44.jpg",
+                script: ["Oie tudo bem?", "Nossa, achei seu perfil muito interessante...", "Você estuda lá na UniRV também?", "Eu adoro gente com esse papo seu rsrs", "Tô precisando de uma dupla pra festa do odonto, topa? 🦷✨"]
+            },
+            {
+                id: 3,
+                name: "Julia",
+                age: 22,
+                course: "Agronomia",
+                bio: "Agro é pop, agro é tudo 🌱🚜 | Camionete e modão 🤠",
+                img: "https://randomuser.me/api/portraits/women/33.jpg",
+                script: ["Opa, bão nu mundo?", "Aqui é sistema bruto kkkk 🤠", "Gosta de sertanejo ou é do rock?", "Tô indo pra fazenda fds, mas hoje tem Buteco.", "Passa lá na minha caminhonete depois, vamo ouvir um Tião Carreiro 🔊"]
+            },
+            {
+                id: 4,
+                name: "Larissa",
+                age: 19,
+                course: "Direito",
+                bio: "Direito por amor ⚖️ | O que acontece no Inter, fica no Inter. 🤫",
+                img: "https://randomuser.me/api/portraits/women/91.jpg",
+                script: ["Oii sumido rs", "Adorei suas fotos!", "Faço direito, já posso te processar por roubar minha atenção? 😂", "Tem cara de quem dá trabalho kkkk", "Me chama no insta, aqui eu quase não entro..."]
+            },
+            {
+                id: 5,
+                name: "Beatriz",
+                age: 23,
+                course: "Eng. Civil",
+                bio: "Engenharia 🏗️ | Gamer nas horas vagas 🎮 | 1,60m de pura raiva",
+                img: "https://randomuser.me/api/portraits/women/52.jpg",
+                script: ["E aí!", "Topa um x1 no LoL? kkk brincadeira", "O que faz de bom?", "Tô precisando de companhia pra festa de sexta...", "Mas já aviso que bebo igual opala v8 🍺"]
+            }
+        ];
+
+        let activeProfileIndex = 0;
+        let myMatches = [];
+        let currentChatId = null;
+
+        window.onload = () => { renderCard(); };
+
+        function renderCard() {
+            const container = document.getElementById('card-container');
+            container.innerHTML = '';
+            if (activeProfileIndex >= profiles.length) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-gray-500 bg-gray-50 rounded-2xl"><i class="fas fa-search-location text-4xl mb-4 text-pink-300"></i><h3 class="font-bold text-lg">Não há mais ninguém perto de você.</h3><p class="text-sm px-8 mt-2">Tente aumentar a distância ou volte mais tarde.</p><button onclick="location.reload()" class="mt-6 px-6 py-2 bg-pink-500 text-white rounded-full font-bold shadow hover:bg-pink-600">Recarregar</button></div>`;
+                return;
+            }
+            const profile = profiles[activeProfileIndex];
+            const card = document.createElement('div');
+            card.className = 'tinder-card';
+            card.style.backgroundImage = `url('${profile.img}')`;
+            card.innerHTML = `<div class="absolute bottom-0 left-0 w-full p-6 text-white card-gradient rounded-b-[20px]"><h2 class="text-3xl font-bold drop-shadow-md">${profile.name}, <span class="font-normal text-2xl">${profile.age}</span></h2><p class="text-sm font-semibold mb-1 opacity-90"><i class="fas fa-graduation-cap"></i> ${profile.course}</p><p class="text-sm opacity-90 line-clamp-2 drop-shadow-sm">${profile.bio}</p></div><div id="stamp-like" class="absolute top-8 left-8 border-4 border-green-500 text-green-500 font-bold text-4xl px-4 py-2 rounded transform -rotate-12 opacity-0 transition duration-200" style="border-radius: 8px;">LIKE</div><div id="stamp-nope" class="absolute top-8 right-8 border-4 border-red-500 text-red-500 font-bold text-4xl px-4 py-2 rounded transform rotate-12 opacity-0 transition duration-200" style="border-radius: 8px;">NOPE</div>`;
+            container.appendChild(card);
+        }
+
+        function handleSwipe(direction) {
+            const card = document.querySelector('.tinder-card');
+            if (!card) return;
+            if (direction === 'right') {
+                card.classList.add('swipe-right');
+                document.getElementById('stamp-like').style.opacity = '1';
+                setTimeout(() => {
+                    const isMatch = Math.random() > 0.05; // Quase sempre dá match
+                    if (isMatch) triggerMatch(profiles[activeProfileIndex]);
+                    else nextProfile();
+                }, 300);
+            } else {
+                card.classList.add('swipe-left');
+                document.getElementById('stamp-nope').style.opacity = '1';
+                setTimeout(nextProfile, 300);
+            }
+        }
+
+        function nextProfile() { activeProfileIndex++; renderCard(); }
+        
+        function triggerMatch(profile) {
+            if (!myMatches.find(m => m.id === profile.id)) {
+                myMatches.unshift({...profile, messages: []});
+                updateMatchesUI();
+            }
+            document.getElementById('match-name-overlay').innerText = profile.name;
+            document.getElementById('match-img-overlay').style.backgroundImage = `url('${profile.img}')`;
+            document.getElementById('match-overlay').classList.remove('hidden');
+            document.getElementById('match-overlay').classList.add('flex');
+            document.getElementById('badge-msg').classList.remove('hidden');
+        }
+
+        function closeMatchOverlay() {
+            document.getElementById('match-overlay').classList.add('hidden');
+            document.getElementById('match-overlay').classList.remove('flex');
+            nextProfile();
+        }
+
+        function openChatFromMatch() {
+            closeMatchOverlay();
+            openChat(myMatches[0].id);
+        }
+
+        function updateMatchesUI() {
+            const newMatchesContainer = document.getElementById('new-matches-row');
+            const msgListContainer = document.getElementById('messages-list');
+            newMatchesContainer.innerHTML = '';
+            msgListContainer.innerHTML = '';
+            myMatches.forEach(match => {
+                const circle = document.createElement('button');
+                circle.onclick = () => openChat(match.id);
+                circle.className = "flex flex-col items-center min-w-[70px] cursor-pointer hover:opacity-80 transition";
+                circle.innerHTML = `<div class="w-16 h-16 rounded-full bg-cover bg-center border-2 border-pink-500 p-0.5" style="background-image: url('${match.img}')"></div><span class="text-xs font-bold text-gray-700 mt-1">${match.name}</span>`;
+                newMatchesContainer.appendChild(circle);
+                const row = document.createElement('div');
+                row.onclick = () => openChat(match.id);
+                const lastMsg = match.messages.length > 0 ? match.messages[match.messages.length - 1].text : "Comece a conversar";
+                const isUserLast = match.messages.length > 0 ? match.messages[match.messages.length - 1].sender === 'user' : false;
+                row.className = "flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition";
+                row.innerHTML = `<div class="w-14 h-14 rounded-full bg-cover bg-center mr-3" style="background-image: url('${match.img}')"></div><div class="flex-1 overflow-hidden"><h4 class="font-bold text-gray-800">${match.name}</h4><p class="text-sm text-gray-500 truncate">${isUserLast ? 'Você: ' : ''}${lastMsg}</p></div>`;
+                msgListContainer.appendChild(row);
+            });
+        }
+
+        function openChat(id) {
+            const match = myMatches.find(m => m.id === id);
+            if (!match) return;
+            currentChatId = id;
+            document.getElementById('chat-header-name').innerText = match.name;
+            document.getElementById('chat-header-img').src = match.img;
+            renderChatMessages(match);
+            const chatView = document.getElementById('view-chat');
+            chatView.classList.remove('hidden');
+            setTimeout(() => { chatView.classList.remove('translate-x-full'); }, 10);
+        }
+
+        function closeChat() {
+            const chatView = document.getElementById('view-chat');
+            chatView.classList.add('translate-x-full');
+            setTimeout(() => { chatView.classList.add('hidden'); }, 300);
+            currentChatId = null;
+            updateMatchesUI();
+        }
+
+        function renderChatMessages(match) {
+            const area = document.getElementById('chat-area');
+            area.innerHTML = '';
+            area.innerHTML += `<div class="text-center text-xs text-gray-400 my-4">Você deu match com ${match.name} hoje</div>`;
+            match.messages.forEach(msg => {
+                const bubble = document.createElement('div');
+                bubble.className = `chat-bubble ${msg.sender === 'user' ? 'chat-mine' : 'chat-theirs'}`;
+                bubble.innerText = msg.text;
+                area.appendChild(bubble);
+            });
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text || !currentChatId) return;
+            const match = myMatches.find(m => m.id === currentChatId);
+            match.messages.push({ sender: 'user', text: text });
+            renderChatMessages(match);
+            input.value = '';
+            simulateReply(match);
+        }
+        document.getElementById('msg-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') sendMessage(); });
+
+        function simulateReply(match) {
+            const area = document.getElementById('chat-area');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-bubble chat-theirs flex items-center h-10 w-16';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            setTimeout(() => { area.appendChild(typingDiv); area.scrollTop = area.scrollHeight; }, 600);
+            const scriptIndex = Math.floor(match.messages.filter(m => m.sender === 'bot').length);
+            let replyText = "";
+            if (match.script && scriptIndex < match.script.length) {
+                replyText = match.script[scriptIndex];
+            } else {
+                const generics = ["Hahaha sim!", "Jura??", "Nossa, sério?", "Tá fazendo o que agora?", "Manda foto 👀", "Aham...", "Tô morrendo de rir aqui"];
+                replyText = generics[Math.floor(Math.random() * generics.length)];
+            }
+            setTimeout(() => {
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) indicator.remove();
+                match.messages.push({ sender: 'bot', text: replyText });
+                renderChatMessages(match);
+            }, 2000 + Math.random() * 2000);
+        }
+
+        function switchTab(tab) {
+            const navSwipe = document.getElementById('nav-swipe');
+            const navMatches = document.getElementById('nav-matches');
+            const viewSwipe = document.getElementById('view-swipe');
+            const viewMatches = document.getElementById('view-matches');
+            if (tab === 'swipe') {
+                viewSwipe.classList.remove('hidden');
+                viewMatches.classList.add('hidden');
+                viewMatches.classList.remove('flex');
+                navSwipe.classList.add('text-pink-500');
+                navMatches.classList.remove('text-pink-500');
+            } else {
+                viewSwipe.classList.add('hidden');
+                viewMatches.classList.remove('hidden');
+                viewMatches.classList.add('flex');
+                navSwipe.classList.remove('text-pink-500');
+                navMatches.classList.add('text-pink-500');
+                document.getElementById('badge-msg').classList.add('hidden');
+                updateMatchesUI();
+            }
+        }
+    </script>
+</body>
+</html>
+
+
